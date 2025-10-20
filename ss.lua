@@ -373,19 +373,26 @@ _G.InputBegan = UIS.InputBegan:Connect(function(Input, GPE)
     end
 end)
 
--- Rejoin same server on L key
+
 do
     local TeleportService = game:GetService("TeleportService")
     local Players = game:GetService("Players")
     local UIS = game:GetService("UserInputService")
 
+    local player = Players.LocalPlayer
+    local placeId = game.PlaceId
+    local jobId = game.JobId
+
     UIS.InputBegan:Connect(function(input, gpe)
         if gpe then return end
         if input.KeyCode == Enum.KeyCode.L then
-            print("[Silent Aim] Rejoining same server...")
-            local player = Players.LocalPlayer
-            local placeId = game.PlaceId
-            local jobId = game.JobId
+            print("[Rejoin] Rejoining same server...")
+
+            -- Save script so it re-executes after teleport
+            queue_on_teleport([[
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/bruhbruhbruhbr/que/refs/heads/main/ss.lua"))()
+            ]])
+
             task.wait(0.2)
             TeleportService:TeleportToPlaceInstance(placeId, jobId, player)
         end
