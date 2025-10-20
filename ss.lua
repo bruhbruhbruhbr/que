@@ -1,11 +1,4 @@
-_G.HitPercentage = 1
-
--- Silent reload protection
-if _G.SilentAimLoaded then
-    warn("Silent Aim already running. Updated HitPercentage to " .. tostring(_G.HitPercentage))
-    return
-end
-_G.SilentAimLoaded = true
+_G.HitPercentage = 100
 
 -- Disconnect previous connections safely
 pcall(function()
@@ -101,21 +94,29 @@ local function GetUnitPosition(Position)
     return Position.Unit
 end
 
--- Goal and mode switching
+-- Goal selection using 9 or 0, Mode selection 1-4
 UIS.InputBegan:Connect(function(Input, GPE)
     if GPE then return end
     if Input.KeyCode == Enum.KeyCode.Nine then
         SelectedGoal = Goals[1]
         if HighlightA then HighlightA.FillTransparency = 0.2 end
         if HighlightB then HighlightB.FillTransparency = 0.8 end
+        game.StarterGui:SetCore("SendNotification", {Title = "Goal Selected", Text = "Now aiming at left", Duration = 2})
     elseif Input.KeyCode == Enum.KeyCode.Zero then
         SelectedGoal = Goals[2]
         if HighlightB then HighlightB.FillTransparency = 0.2 end
         if HighlightA then HighlightA.FillTransparency = 0.8 end
-    elseif Input.KeyCode == Enum.KeyCode.One then Mode = "A"
+        game.StarterGui:SetCore("SendNotification", {Title = "Goal Selected", Text = "Now aiming at right", Duration = 2})
+    end
+
+    if Input.KeyCode == Enum.KeyCode.One then Mode = "A"
     elseif Input.KeyCode == Enum.KeyCode.Two then Mode = "B"
     elseif Input.KeyCode == Enum.KeyCode.Three then Mode = "C"
     elseif Input.KeyCode == Enum.KeyCode.Four then Mode = "D" end
+
+    if Input.KeyCode == Enum.KeyCode.One or Input.KeyCode == Enum.KeyCode.Two or Input.KeyCode == Enum.KeyCode.Three or Input.KeyCode == Enum.KeyCode.Four then
+        game.StarterGui:SetCore("SendNotification", {Title = "Mode Changed", Text = "Mode: " .. Mode, Duration = 2})
+    end
 end)
 
 local function GetGoal()
@@ -141,7 +142,11 @@ end
 local function InFootingCheck()
     local Distance = GetDistance()
     local Basketball = GetBasketball()
-    IsInFooting = Basketball and Distance > 3 and Distance < 109
+    if not Basketball then
+        IsInFooting = false
+        return
+    end
+    IsInFooting = Distance > 3 and Distance < 109
 end
 
 local DunkStartTime = nil
@@ -306,6 +311,7 @@ local function GetArc()
 
     return Arc, Power
 end
+
 -- Shoot function
 local function Shoot()
     local Goal = GetGoal()
@@ -327,7 +333,7 @@ local function Shoot()
     if Key ~= "Shotta" then RemoveKeyFromKeyTable() end
 end
 
--- Silent Aim toggle
+-- Toggle Silent Aim + Shoot
 local isEnabled = false
 local XConnection
 
@@ -343,12 +349,18 @@ local function EnableSilentAim()
                 if Player.Character and Ball and IsInFooting then
                     local currentDistance = GetDistance()
                     print("Mode:", Mode, "| Shooting from distance:", math.floor(currentDistance * 100) / 100)
+
                     if Mode == "D" then
                         Player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
                         task.wait(0.23)
                     end
+
                     local success, err = pcall(Shoot)
-                    if not success then warn("Shoot failed:", err) end
+                    if not success then
+                        warn("Shoot failed:", err)
+                    end
+                else
+                    warn("Cannot shoot: Ball missing or not in footing.")
                 end
             end)
         end
@@ -364,7 +376,11 @@ _G.InputBegan = UIS.InputBegan:Connect(function(Input, GPE)
     if GPE then return end
     if Input.KeyCode == Enum.KeyCode.K then
         isEnabled = not isEnabled
-        print("Silent Aim is now " .. (isEnabled and "ON" or "OFF"))
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Silent Aim",
+            Text = "Silent Aim is now " .. (isEnabled and "ON" or "OFF"),
+            Duration = 3
+        })
         if isEnabled then
             EnableSilentAim()
         else
