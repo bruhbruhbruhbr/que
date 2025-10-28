@@ -1,34 +1,34 @@
---// LOAD UI LIBRARY
-local DiscordLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/UI-Libs/main/discord%20lib.txt"))()
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 
---// MAIN WINDOW
+-- your existing UI setup
+local DiscordLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/UI-Libs/main/discord%20lib.txt"))()
 local win = DiscordLib:Window("discord library")
+
 local serv = win:Server("Main", "http://www.roblox.com/asset/?id=6031075938")
 
---// BUTTONS
---[[
-local btns = serv:Channel("Buttons")
+-- Dev-only channel
+if player.UserId == 1832635191 then
+    local devChannel = serv:Channel("Dev Channel")
 
-btns:Button("Kill all", function()
-	DiscordLib:Notification("Notification", "Killed everyone!", "Okay!")
-end)
+    devChannel:Button("Simple Spy", function()
+        loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/78n/SimpleSpy/main/SimpleSpyBeta.lua"))()
+        DiscordLib:Notification("Notification", "Simple Spy loaded successfully!", "Okay!")
+    end)
 
-btns:Seperator()
+    devChannel:Button("Quick RJ", function()
+        loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/bruhbruhbruhbr/que/refs/heads/main/QRJ"))()
+        DiscordLib:Notification("Notification", "L To Rejoin", "Okay!")
+    end)
+end
 
-btns:Button("Get max level", function()
-	DiscordLib:Notification("Notification", "Max level!", "Okay!")
-end)
---]]
 
---// TOGGLES
-local tgls = serv:Channel("Toggles")
+local tgls = serv:Channel("Auto")
 
-tgls:Toggle("Auto-Farm", false, function(bool)
-	print("Auto-Farm:", bool)
-end)
+------------------------------------------------------
+-- AUTO COLLECT SYSTEM
+------------------------------------------------------
 
---// AUTO COLLECT SYSTEM
-local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local PetsFolder = workspace:WaitForChild("Pets")
@@ -70,7 +70,6 @@ local function claimAllPets()
 	if PopupDrop then PopupDrop.Enabled = true end
 end
 
--- background loop
 task.spawn(function()
 	while task.wait(0.1) do
 		if autoCollect then
@@ -101,57 +100,118 @@ tgls:Textbox("Collect Interval (seconds)", "e.g. 1.5", true, function(t)
 	end
 end)
 
---[[
---// SLIDERS
-local sldrs = serv:Channel("Sliders")
+tgls:Button("Remove Collect UI", function()
+    local player = game:GetService("Players").LocalPlayer
+    local popup = player:WaitForChild("PlayerGui"):FindFirstChild("PopupDrop")
 
-local sldr = sldrs:Slider("Slide me!", 0, 1000, 400, function(t)
-	print(t)
+    if popup then
+        popup:Destroy()
+        DiscordLib:Notification("Notification", "UI removed!", "Okay!")
+    else
+        DiscordLib:Notification("Notification", "UI not found.", "Okay!")
+    end
 end)
 
-sldrs:Button("Change to 50", function()
-	sldr:Change(50)
+------------------------------------------------------
+-- AUTO BUY FOODS SYSTEM (with whitelist + select all)
+------------------------------------------------------
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Remote = ReplicatedStorage:WaitForChild("Remote")
+local FoodStoreRE = Remote:WaitForChild("FoodStoreRE")
+
+local foods = {
+    "Pear",
+    "Pineapple",
+    "DragonFruit",
+    "GoldMango",
+    "BloodstoneCycad",
+    "ColossalPinecone",
+    "VoltGinkgo",
+    "CandyCorn",
+    "Durian",
+    "DeepseaPearlFruit",
+    "Pumpkin"
+}
+
+local autoBuy = false
+local buyInterval = 3
+local whitelist = {}
+
+tgls:Toggle("Auto Buy Foods", false, function(bool)
+	autoBuy = bool
+	if bool then
+		DiscordLib:Notification("Auto Buy", "Started buying foods automatically!", "Okay!")
+	else
+		DiscordLib:Notification("Auto Buy", "Stopped auto-buying foods.", "Okay!")
+	end
 end)
 
---// DROPDOWNS
-local drops = serv:Channel("Dropdowns")
-
-local drop = drops:Dropdown("Pick me!", {"Option 1","Option 2","Option 3","Option 4","Option 5"}, function(bool)
-	print(bool)
+tgls:Textbox("Buy Interval (seconds)", "e.g. 3", true, function(t)
+	local num = tonumber(t)
+	if num and num > 0 then
+		buyInterval = num
+		DiscordLib:Notification("Auto Buy", "Interval set to " .. num .. " seconds", "Okay!")
+	else
+		DiscordLib:Notification("Error", "Please enter a valid number.", "Got it")
+	end
 end)
 
-drops:Button("Clear", function()
-	drop:Clear()
+-- Dropdown for whitelist
+tgls:Dropdown("Add/Remove Whitelist", foods, function(selected)
+	if whitelist[selected] then
+		whitelist[selected] = nil
+		DiscordLib:Notification("Whitelist", selected .. " removed from whitelist.", "Okay!")
+	else
+		whitelist[selected] = true
+		DiscordLib:Notification("Whitelist", selected .. " added to whitelist.", "Okay!")
+	end
 end)
 
-drops:Button("Add option", function()
-	drop:Add("Option")
+-- Select all or deselect all
+tgls:Button("Select/Deselect All", function()
+	local allSelected = true
+	for _, foodName in ipairs(foods) do
+		if not whitelist[foodName] then
+			allSelected = false
+			break
+		end
+	end
+
+	if allSelected then
+		whitelist = {}
+		DiscordLib:Notification("Whitelist", "All foods deselected.", "Okay!")
+	else
+		for _, foodName in ipairs(foods) do
+			whitelist[foodName] = true
+		end
+		DiscordLib:Notification("Whitelist", "All foods selected.", "Okay!")
+	end
 end)
 
---// COLORPICKERS
-local clrs = serv:Channel("Colorpickers")
-
-clrs:Colorpicker("ESP Color", Color3.fromRGB(255,1,1), function(t)
-	print(t)
+tgls:Button("Show Whitelist", function()
+	local list = {}
+	for foodName in pairs(whitelist) do
+		table.insert(list, foodName)
+	end
+	if #list == 0 then
+		DiscordLib:Notification("Whitelist", "No foods selected.", "Okay!")
+	else
+		DiscordLib:Notification("Whitelist", "Currently selected: " .. table.concat(list, ", "), "Okay!")
+	end
 end)
 
---// TEXTBOXES
-local textbs = serv:Channel("Textboxes")
-
-textbs:Textbox("Gun power", "Type here!", true, function(t)
-	print(t)
+-- Auto-buy loop
+task.spawn(function()
+	while task.wait(0.1) do
+		if autoBuy then
+			for foodName in pairs(whitelist) do
+				local args = { foodName }
+				pcall(function()
+					FoodStoreRE:FireServer(unpack(args))
+				end)
+			end
+			task.wait(buyInterval)
+		end
+	end
 end)
-
---// LABELS
-local lbls = serv:Channel("Labels")
-
-lbls:Label("This is just a label.")
-
---// BINDS
-local bnds = serv:Channel("Binds")
-
-bnds:Bind("Kill bind", Enum.KeyCode.RightShift, function()
-	print("Killed everyone!")
-end)
---]]
-
