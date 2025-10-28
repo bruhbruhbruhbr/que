@@ -1,0 +1,17 @@
+do
+    local TeleportService = game:GetService("TeleportService")
+    local Players = game:GetService("Players")
+    local UIS = game:GetService("UserInputService")
+
+    UIS.InputBegan:Connect(function(input, gpe)
+        if gpe then return end
+        if input.KeyCode == Enum.KeyCode.L then
+            print("Rejoining same server...")
+            local player = Players.LocalPlayer
+            local placeId = game.PlaceId
+            local jobId = game.JobId
+            task.wait(0.2)
+            TeleportService:TeleportToPlaceInstance(placeId, jobId, player)
+        end
+    end)
+end
