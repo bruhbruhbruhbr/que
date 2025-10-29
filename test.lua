@@ -289,16 +289,19 @@ end
 
 
 local tgls = serv:Channel("Auto")
-
 ------------------------------------------------------
--- AUTO COLLECT SYSTEM
+-- AUTO COLLECT SYSTEM (Optimized with Cooldown)
 ------------------------------------------------------
 local RepStorage = game:GetService("ReplicatedStorage")
 local PetsFolder = workspace:WaitForChild("Pets")
-local player = game:GetService("Players").LocalPlayer
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 
 local autoCollect = false
-local scanInterval = 0.25
+local scanInterval = 1 -- default 1 second scan interval
+local claimCooldown = 60 -- 60 seconds cooldown per pet
+
+local claimedPets = {} -- store pets and timestamps
 
 local function readTime()
     local timeObj = RepStorage:FindFirstChild("Time")
@@ -314,6 +317,11 @@ end
 
 local function claimPet(pet)
     if not pet then return end
+    local lastClaim = claimedPets[pet.Name]
+    if lastClaim and (os.time() - lastClaim) < claimCooldown then
+        return -- skip if claimed less than 1 minute ago
+    end
+
     local re = pet:FindFirstChild("RE", true)
     if re and re:IsA("RemoteEvent") then
         local token = computeToken()
@@ -324,9 +332,11 @@ local function claimPet(pet)
                 re:FireServer("Claim", pet.Name)
             end
         end)
+        claimedPets[pet.Name] = os.time() -- set claim timestamp
     end
 end
 
+-- Scan existing pets
 task.spawn(function()
     while task.wait(scanInterval) do
         if autoCollect then
@@ -337,6 +347,14 @@ task.spawn(function()
     end
 end)
 
+-- Handle new pets spawned
+PetsFolder.ChildAdded:Connect(function(pet)
+    if autoCollect then
+        claimPet(pet)
+    end
+end)
+
+-- UI Toggles (unchanged except interval applied)
 tgls:Toggle("Auto Collect", false, function(bool)
 	autoCollect = bool
 	if bool then
@@ -348,10 +366,10 @@ tgls:Toggle("Auto Collect", false, function(bool)
 	end
 end)
 
-tgls:Textbox("Collect Interval (seconds)", "e.g. 1.5", true, function(t)
+tgls:Textbox("Collect Interval (seconds)", "e.g. 1.5 (default is 60)", true, function(t)
 	local num = tonumber(t)
 	if num and num > 0 then
-		collectInterval = num
+		scanInterval = num
 		DiscordLib:Notification("Auto Collect", "Interval set to " .. num .. " seconds", "Okay!")
 	else
 		DiscordLib:Notification("Error", "Please enter a valid number.", "Got it")
@@ -359,9 +377,7 @@ tgls:Textbox("Collect Interval (seconds)", "e.g. 1.5", true, function(t)
 end)
 
 tgls:Button("Remove Collect UI", function()
-    local player = game:GetService("Players").LocalPlayer
     local popup = player:WaitForChild("PlayerGui"):FindFirstChild("PopupDrop")
-
     if popup then
         popup:Destroy()
         DiscordLib:Notification("Notification", "UI removed!", "Okay!")
