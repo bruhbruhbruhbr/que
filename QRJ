@@ -15,3 +15,39 @@ do
         end
     end)
 end
+
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local enabled = false
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.E then
+        enabled = not enabled
+        print("Circle movement:", enabled and "ON" or "OFF")
+        
+        if enabled then
+            task.spawn(function()
+                while enabled do
+                    -- Spam WASD quickly to simulate circular movement
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.W, false, game)
+                    task.wait(0.05)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.W, false, game)
+
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.A, false, game)
+                    task.wait(0.05)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.A, false, game)
+
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.S, false, game)
+                    task.wait(0.05)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.S, false, game)
+
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.D, false, game)
+                    task.wait(0.05)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.D, false, game)
+                end
+            end)
+        end
+    end
+end)
