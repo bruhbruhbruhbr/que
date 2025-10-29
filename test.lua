@@ -293,55 +293,48 @@ local tgls = serv:Channel("Auto")
 ------------------------------------------------------
 -- AUTO COLLECT SYSTEM
 ------------------------------------------------------
-
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local RepStorage = game:GetService("ReplicatedStorage")
 local PetsFolder = workspace:WaitForChild("Pets")
-local CLAIM_ARGS = { "Claim" }
-local autoCollect = false
-local collectInterval = 1 -- default seconds
-local PopupDrop = PlayerGui:WaitForChild("PopupDrop", 10)
+local player = game:GetService("Players").LocalPlayer
 
-local function findRemoteForPet(pet)
-	local r = pet:FindFirstChild("RE")
-	if r and (r:IsA("RemoteEvent") or r:IsA("RemoteFunction")) then
-		return r
-	end
-	for _, child in ipairs(pet:GetChildren()) do
-		if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
-			return child
-		end
-	end
-	for _, desc in ipairs(pet:GetDescendants()) do
-		if (desc.Name == "RE" or desc:IsA("RemoteEvent") or desc:IsA("RemoteFunction")) then
-			return desc
-		end
-	end
-	return nil
+local autoCollect = false
+local scanInterval = 0.25
+
+local function readTime()
+    local timeObj = RepStorage:FindFirstChild("Time")
+    if not timeObj then return nil end
+    return timeObj, timeObj:GetAttribute("s"), timeObj.Value
 end
 
-local function claimAllPets()
-	if PopupDrop then PopupDrop.Enabled = false end
-	for _, pet in ipairs(PetsFolder:GetChildren()) do
-		if typeof(pet) == "Instance" then
-			local remote = findRemoteForPet(pet)
-			if remote and type(remote.FireServer) == "function" then
-				pcall(function()
-					remote:FireServer(unpack(CLAIM_ARGS))
-				end)
-			end
-		end
-	end
-	if PopupDrop then PopupDrop.Enabled = true end
+local function computeToken()
+    local timeObj, s, v = readTime()
+    if not timeObj or not s or not v then return nil end
+    return bit32.bxor(player.UserId, s, v)
+end
+
+local function claimPet(pet)
+    if not pet then return end
+    local re = pet:FindFirstChild("RE", true)
+    if re and re:IsA("RemoteEvent") then
+        local token = computeToken()
+        pcall(function()
+            if token then
+                re:FireServer("Claim", token)
+            else
+                re:FireServer("Claim", pet.Name)
+            end
+        end)
+    end
 end
 
 task.spawn(function()
-	while task.wait(0.1) do
-		if autoCollect then
-			claimAllPets()
-			task.wait(collectInterval)
-		end
-	end
+    while task.wait(scanInterval) do
+        if autoCollect then
+            for _, pet in ipairs(PetsFolder:GetChildren()) do
+                claimPet(pet)
+            end
+        end
+    end
 end)
 
 tgls:Toggle("Auto Collect", false, function(bool)
@@ -744,4 +737,3 @@ task.spawn(function()
 		end
 	end
 end)
-
