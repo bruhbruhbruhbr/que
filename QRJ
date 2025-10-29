@@ -30,14 +30,25 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if enabled then
             task.spawn(function()
                 while enabled do
-                    -- Spam WASD quickly to simulate circular movement
+                    -- W
                     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.W, false, game)
                     task.wait(0.05)
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.W, false, game)
 
+                    -- A
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.A, false, game)
+                    task.wait(0.05)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.A, false, game)
+
+                    -- S
                     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.S, false, game)
                     task.wait(0.05)
                     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.S, false, game)
+
+                    -- D
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.D, false, game)
+                    task.wait(0.05)
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.D, false, game)
                 end
             end)
         end
