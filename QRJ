@@ -2,9 +2,6 @@ local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 
--- Replace this with the correct private server link code from your share link
-local PRIVATE_SERVER_CODE = "7d8f039fd5443643842c2e30f34d3f1a"  
-
 UIS.InputBegan:Connect(function(input, gpe)
     if gpe then return end
     if input.KeyCode == Enum.KeyCode.L then
