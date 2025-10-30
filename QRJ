@@ -1,20 +1,21 @@
-do
-    local TeleportService = game:GetService("TeleportService")
-    local Players = game:GetService("Players")
-    local UIS = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
 
-    UIS.InputBegan:Connect(function(input, gpe)
-        if gpe then return end
-        if input.KeyCode == Enum.KeyCode.L then
-            print("Rejoining same server...")
-            local player = Players.LocalPlayer
-            local placeId = game.PlaceId
-            local jobId = game.JobId
-            task.wait(0.2)
-            TeleportService:TeleportToPlaceInstance(placeId, jobId, player)
-        end
-    end)
-end
+-- Replace this with the correct private server link code from your share link
+local PRIVATE_SERVER_CODE = "7d8f039fd5443643842c2e30f34d3f1a"  
+
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.L then
+        print("Rejoining private server via access code...")
+        local player = Players.LocalPlayer
+        local placeId = game.PlaceId
+        -- Teleport to the private server using the access code
+        task.wait(0.2)
+        TeleportService:TeleportToPrivateServer(placeId, PRIVATE_SERVER_CODE, {player})
+    end
+end)
 
 local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
