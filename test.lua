@@ -406,7 +406,7 @@ local foods = {
     "Durian",
     "DeepseaPearlFruit",
     "Pumpkin",
-	"FrankenKiwi
+	"FrankenKiwi"
 }
 
 local autoBuy = false
